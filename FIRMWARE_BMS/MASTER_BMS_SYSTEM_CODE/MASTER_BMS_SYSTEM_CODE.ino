@@ -2,6 +2,8 @@
 #include "lora_ra02.h"
 #include <Arduino_JSON.h>
 
+ String jsonString;
+ 
 //system pin difinitions
 #define magneticSwitch 34
 #define ESCMospin 12
@@ -26,6 +28,7 @@ long timeout    = (10*60*1000); //10min timeout
     int rcPotentiomenterVolt = 0;
     uint16_t PWMtoECu = 0;
     
+    
 void setup() {
   // put your setup code here, to run once:
   ledcSetup(ledChannel, freq, resolution);
@@ -38,8 +41,10 @@ void setup() {
   ESC_disable;
 }
   
-  long getDataInterval = 2*60*1000;
-  long currentTime = 0;
+  const long getDataInterval  = 2*60*1000;
+  long currentTime            = 0;
+  const long sendDataInterval = 60*1000;
+  long sendCurrentTime = 0;
 
 void loop() {
   // put your main code here, to run repeatedly:
@@ -117,17 +122,21 @@ void loop() {
         Serial.print("my keys = ");
         Serial.println(myObject.keys());
         
-         String jsonString = JSON.stringify(myObject);
+         jsonString = JSON.stringify(myObject);
          Serial.print("JSON.stringify(myObject) = ");
          Serial.println(jsonString);
        
        
   //snprintf(outgoing, sizeof(outgoing), "()",totalVoltage,);
  
-      sendMessage(jsonString);
+      
       sendData = 0;
   }
-  
+  if(millis() -sendCurrentTime>= sendDataInterval )
+  {
+    sendMessage(jsonString);
+    sendCurrentTime = millis();
+  }
   //handle the power on functionality and the pwm output functionality
   if(millis()-updateTime > timeout)
   {
